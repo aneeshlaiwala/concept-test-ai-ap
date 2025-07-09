@@ -3,6 +3,8 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import pandas as pd
 import uuid
+import openai
+import io
 
 st.title("AI-Powered Concept Test")
 
@@ -65,7 +67,7 @@ if st.button("Submit Response"):
     df.to_csv("responses.csv", index=False)
     st.success("Response Saved Successfully ✅")
 
-    # Show modified image (only after submission)
+    # Apply simple modifications
     modified_image = image.copy()
     if modify:
         if change_color:
@@ -75,7 +77,11 @@ if st.button("Submit Response"):
 
         if new_text:
             draw = ImageDraw.Draw(modified_image)
-            font = ImageFont.load_default()
+            font_size = int(modified_image.size[1] * 0.06)
+            try:
+                font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
+            except:
+                font = ImageFont.load_default()
             w, h = modified_image.size
             if text_position == "Top":
                 position = (10, 10)
@@ -83,13 +89,34 @@ if st.button("Submit Response"):
                 position = (w // 2 - 50, h // 2)
             else:
                 position = (10, h - 30)
-            draw.text(position, new_text, fill="white", font=font)
+            draw.text(position, new_text, fill="white", font=font, stroke_width=2, stroke_fill="black")
 
     st.subheader("Modified Image (after applying your changes)")
     st.image(modified_image, caption="Modified Concept Image", use_container_width=True)
 
-    if use_openai:
-        st.warning("Note: OpenAI API changes are not yet implemented. Placeholder for future AI-powered edits.")
+    # If OpenAI is enabled, send request to DALL-E for image editing
+    if use_openai and openai_api_key and openai_prompt:
+        st.info("Sending request to OpenAI DALL-E...")
+        try:
+            openai.api_key = openai_api_key
+            # Convert modified image to bytes
+            img_bytes = io.BytesIO()
+            modified_image.save(img_bytes, format='PNG')
+            img_bytes.seek(0)
+
+            # Send to DALL-E for editing
+            response = openai.Image.create_edit(
+                image=img_bytes,
+                mask=None,
+                prompt=openai_prompt,
+                n=1,
+                size="512x512"
+            )
+            edited_image_url = response['data'][0]['url']
+            st.subheader("AI-Edited Image (via OpenAI DALL-E)")
+            st.image(edited_image_url, caption="AI Edited Image", use_container_width=True)
+        except Exception as e:
+            st.error(f"Error using OpenAI API: {e}")
 
 else:
     st.info("Fill the form and click Submit to apply changes.")
