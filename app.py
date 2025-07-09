@@ -22,6 +22,7 @@ modify = st.checkbox("I want to modify the concept image")
 change_color = None
 new_text = None
 text_position = None
+change_description = ""
 use_openai = False
 openai_api_key = ""
 openai_prompt = ""
@@ -30,6 +31,8 @@ if modify:
     change_color = st.color_picker("Pick a new background color")
     new_text = st.text_input("New text to display")
     text_position = st.radio("Text Position", ["Top", "Center", "Bottom"])
+    
+    change_description = st.text_area("Describe the changes you want in this image (manual notes or instructions)")
     
     use_openai = st.checkbox("I want to use my OpenAI API key for advanced changes")
     if use_openai:
@@ -47,6 +50,7 @@ if st.button("Submit Response"):
         "change_color": change_color,
         "new_text": new_text,
         "text_position": text_position,
+        "change_description": change_description,
         "use_openai": use_openai,
         "openai_api_key": "Provided" if openai_api_key else "Not Provided",
         "openai_prompt": openai_prompt
